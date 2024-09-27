@@ -12,23 +12,23 @@ lowNic = [];
 highNic = [];
 
 % Load data from 'Original_freq' spreadsheet for Saline control, Low Nic, and High Nic
-salineControl = xlsread(Summarized_files(1).name, 'Original_freq');
-lowNic = xlsread(Summarized_files(2).name, 'Original_freq');
-highNic = xlsread(Summarized_files(3).name, 'Original_freq');
+salineControl = xlsread(Summarized_files(1).name);
+lowNic = xlsread(Summarized_files(2).name);
+highNic = xlsread(Summarized_files(3).name);
+
+global random_order;
+n = 58; % Set the maximum number
+random_order = randperm(n)'; % Generate a random permutation
 
 % Normalize and sort data
-salineControl = normalizeAndSort(salineControl, 'descend');
-lowNic = normalizeAndSort(lowNic, 'descend');
-highNic = normalizeAndSort(highNic, 'ascend');
-
-% ... [You can continue with your plotting code here]
-
-% ... [Previous code to load and normalize data]
+[salineControl, salineControl_sorted_oriData, salineControl_random_order] = normalizeAndSort(salineControl, 'descend');
+[lowNic, lowNic_sorted_oriData, lowNic_random_order] = normalizeAndSort(lowNic, 'descend');
+[highNic, highNic_sorted_oriData, highNic_random_order ] = normalizeAndSort(highNic, 'ascend');
 
 % Initialize a new figure
 figure;
 % Set figure size
-set(gcf, 'Position', [100, 100, 1600, 1200]);
+set(gcf, 'Position', [10, 10, 1200, 900]);
 
 % Plotting heatmaps
 subplot(2,3,1)
@@ -47,7 +47,7 @@ subplot(2,3,6)
 plotPieChart(highNic, 'High Nic');
 
 % Save figure as PDF (or you can choose EPS)
-saveas(gcf, 'Heatmap.pdf', 'pdf');
+print(gcf, 'Heatmap.pdf', '-dpdf', '-fillpage');
 
 figure
 % Overlay all three groups in one plot
@@ -57,7 +57,7 @@ figure
 hold on;
 
 % Function to plot mean and SEM
-plotMeanAndSEM(salineControl, 'k'); % Black for Saline control
+plotMeanAndSEM(salineControl, [0, 0, 0]); % Black for Saline control
 plotMeanAndSEM(lowNic, [1, 0.5, 0]); % Orange for Low Nic
 plotMeanAndSEM(highNic, [0.5, 0, 0.5]); % Purple for High Nic
 
@@ -75,8 +75,8 @@ saveas(gcf, 'MyFigure.pdf', 'pdf');
 
 
 % Calculate duration of firing change for each condition and each unit
-[duration_increase_lowNic, duration_decrease_lowNic] = calcDuration(lowNic, 30);
-[duration_increase_highNic, duration_decrease_highNic] = calcDuration(highNic, 30);
+[duration_increase_lowNic, duration_decrease_lowNic] = calcDuration(lowNic, 300);
+[duration_increase_highNic, duration_decrease_highNic] = calcDuration(highNic, 300);
 
 Thresthold_1 = 20;
 
@@ -94,43 +94,13 @@ common_durations_highNic = duration_decrease_highNic(common_units);
 % [R, P] = corr(common_durations_lowNic, common_durations_highNic, 'Type', 'Spearman'); % Spearman
 
 
-% % Scatter Plot with Mean and SEM
-% figure;
-% scatter(common_durations_lowNic, common_durations_highNic, 'filled');
-% 
-% axis square;
-% hold on;
-% 
-% % Calculate the mean and SEM
-% mean_lowNic = mean(common_durations_lowNic);
-% mean_highNic = mean(common_durations_highNic);
-% 
-% sem_lowNic = std(common_durations_lowNic) / sqrt(length(common_durations_lowNic));
-% sem_highNic = std(common_durations_highNic) / sqrt(length(common_durations_highNic));
-% 
-% % Plot mean + SEM lines
-% line([mean_lowNic, mean_lowNic], ylim, 'Color', 'r', 'LineStyle', '--', 'LineWidth', 2);
-% line(xlim, [mean_highNic, mean_highNic], 'Color', 'r', 'LineStyle', '--', 'LineWidth', 2);
-% 
-% % Plot mean + SEM points
-% errorbar(mean_lowNic, mean_highNic, sem_highNic, 'horizontal', 'r', 'LineWidth', 2);
-% errorbar(mean_lowNic, mean_highNic, sem_lowNic, 'vertical', 'r', 'LineWidth', 2);
-% 
-% xlabel('Duration of Increase in Low Nicotine (s)');
-% ylabel('Duration of Decrease in High Nicotine (s)');
-% title(['Pearson Correlation: R = ' num2str(R(1,2)) ', P = ' num2str(P(1,2))]);
-% grid on;
-% hold off;
-% 
-
-
 % Scatter Plot with Line of Best Fit
 figure;
 
 scatter(common_durations_lowNic, common_durations_highNic, 'k');
 axis square;
-xlim([20 90]); % Set x-axis limits
-ylim([20 90]); % Set y-axis limits
+xlim([200 900]); % Set x-axis limits
+ylim([200 900]); % Set y-axis limits
 
 xlabel('Duration of Increase in Low Nicotine (s)');
 ylabel('Duration of Decrease in High Nicotine (s)');
@@ -149,78 +119,154 @@ saveas(gcf, 'Pearson Correlation.pdf', 'pdf');
 
 % grid on;
 
+%%
+% New figure for 2D plot of High Nicotine group with both leftward and upward shifts for each trial
+figure;
+% Set figure size
+set(gcf, 'Position', [10, 10, 1500, 600]);
+subplot(1,3,1)
+hold on;
+% Plot 2D raw traces for High Nic with smoothing, time range from 150s to 450s, and both types of shifts
+plotRawTraces2DWithBothShiftsAndLabels(salineControl, [0, 0, 0], 150, 450);
+xlabel('Time (s)');
+ylabel('Normalized Firing Rate');
+title('Saline Control');
 
+subplot(1,3,2)
+hold on;
+% Plot 2D raw traces for High Nic with smoothing, time range from 150s to 450s, and both types of shifts
+plotRawTraces2DWithBothShiftsAndLabels(lowNic, [1, 0.5, 0], 150, 450);
+xlabel('Time (s)');
+ylabel('Normalized Firing Rate');
+title('Low Nic');
+
+subplot(1,3,3)
+hold on;
+% Plot 2D raw traces for High Nic with smoothing, time range from 150s to 450s, and both types of shifts
+plotRawTraces2DWithBothShiftsAndLabels(highNic, [0.5, 0, 0.5], 150, 450);
+xlabel('Time (s)');
+ylabel('Normalized Firing Rate');
+title('High Nic');
+
+% grid on;
+
+
+% Save figure as PDF
+saveas(gcf, 'HighNic2DShiftedBothWaysWithLabels.pdf', 'pdf');
+
+% Function to plot 2D raw traces with time range, smoothing, both types of shifts, and trial labels
+function plotRawTraces2DWithBothShiftsAndLabels(data, color, startTime, endTime)
+% Assuming 1 sample per second, adjust this as per your actual sampling rate
+samplingRate = 1; % Change this to match your actual data's sampling rate
+startIndex = startTime * samplingRate + 1;
+endIndex = endTime * samplingRate + 1;
+
+% Smoothing the data using a moving average
+windowSize = 5; % Change this value to adjust the smoothness
+smoothedData = movmean(data, windowSize, 2);
+
+timeVector = linspace(startTime, endTime, endIndex - startIndex + 1);
+verticalShiftAmount = 0.15; % Change this value to adjust vertical spacing between trials
+horizontalShiftAmount = 2; % Change this value to adjust horizontal spacing between trials
+
+for i = 1:size(data, 1)
+    % Applying both vertical and horizontal shifts
+    shiftedTime = timeVector + (i-1) * horizontalShiftAmount;
+    shiftedData = smoothedData(i, startIndex:endIndex) + (i-1) * verticalShiftAmount;
+    plot(shiftedTime, shiftedData, 'Color', color);
+
+    % Adding text labels for each trial number
+    trialNumberText = sprintf('Trial %d', i);
+    % text(shiftedTime(end) + 1, shiftedData(end), trialNumberText, 'VerticalAlignment', 'middle', 'HorizontalAlignment', 'left', 'FontSize', 8, 'Color', color);
+end
+axis square;
+ylim([0 10]);
+end
+
+hold off;
 
 
 
 
 
 % Helper function to normalize and sort data
-function [sortedData] = normalizeAndSort(data, sortDirection)
-    % Normalize each row to its mean from 1 to 20
-    for i = 1:size(data, 1)
-        meanValue = mean(data(i, 1:20));
-        data(i, :) = data(i, :) / meanValue;
-    end
-    
-    % Sort rows based on average from bins 35 to end
-    [~, sortIdx] = sort(mean(data(:, 35:end), 2), sortDirection);
-    sortedData = data(sortIdx, :);
+function [sortedData, sorted_oriData, sorted_Data_random_order] = normalizeAndSort(data, sortDirection)
+global random_order
+% Normalize each row to its mean from 1 to 200
+Ori_data = data;
+for i = 1:size(data, 1)
+    meanValue = mean(data(i, 1:200));
+    Mean_data(i, :) = Ori_data(i, :) / meanValue;
+end
+
+% Sort rows based on average from bins 350 to end
+[~, sortIdx] = sort(mean(Mean_data(:, 350:end), 2), sortDirection);
+sortedData = Mean_data(sortIdx, :);
+sorted_oriData = Ori_data (sortIdx, :);
+sorted_Data_random_order = sorted_oriData(random_order,:);
 end
 
 % Helper function to plot heatmap
 function plotHeatmap(data, titleStr)
-    colormap_clim = [0 5];
-    imagesc(data, colormap_clim); 
-    axis square;
-    colormap(gca,'hot');
-    colorbar;
-    xlabel('Time');
-    ylabel('Units');
-    title(['Heatmap of ' titleStr]);
+colormap_clim = [0 5];
+imagesc(data, colormap_clim);
+axis square;
+colormap(gca,'hot');
+colorbar;
+xlabel('Time');
+ylabel('Units');
+title(['Heatmap of ' titleStr]);
 end
 
 % Helper function to plot pie chart
 function plotPieChart(data, titleStr)
-    meanFirst30 = mean(data(:, 1:30), 2);
-    mean30to60 = mean(data(:, 30:120), 2);
-    unitsWithReduction = mean30to60 < 0.8 * meanFirst30;
-    unitsWithIncreasing = mean30to60 > 1.2 * meanFirst30;
-    reductionRatio = sum(unitsWithReduction) / size(data, 1);
-    increaseRatio = sum(unitsWithIncreasing) / size(data, 1);
-    
-    increased = increaseRatio * 100
-    decreased = reductionRatio * 100
-    unchanged = 100 - increased - decreased
-    
-    labels = {'Increased', 'Decreased', 'Unchanged'};
-    custom_colormap = [1, 0.5, 0.5; 0.2, 0.2, 0.2; 1, 1, 1];
-    pie([increased, decreased, unchanged], labels);
-    colormap(gca, custom_colormap);
-    title(['Pie Chart of ' titleStr]);
+meanFirst300 = mean(data(:, 1:300), 2);
+mean300to600 = mean(data(:, 300:1200), 2);
+unitsWithReduction = mean300to600 < 0.8 * meanFirst300;
+unitsWithIncreasing = mean300to600 > 1.2 * meanFirst300;
+reductionRatio = sum(unitsWithReduction) / size(data, 1);
+increaseRatio = sum(unitsWithIncreasing) / size(data, 1);
+
+increased = increaseRatio * 100;
+decreased = reductionRatio * 100;
+unchanged = 100 - increased - decreased;
+
+labels = {'Increased', 'Decreased', 'Unchanged'};
+custom_colormap = [1, 0.5, 0.5; 0.2, 0.2, 0.2; 1, 1, 1];
+pie([increased, decreased, unchanged], labels);
+colormap(gca, custom_colormap);
+title(['Pie Chart of ' titleStr]);
 end
 
 % Helper function to overlay plots
 function plotOverlay(salineControl, lowNic, highNic)
-    hold on;
-    plot(mean(salineControl, 1), 'Color', 'k');
-    plot(mean(lowNic, 1), 'Color', [0.6, 1, 0.6]);
-    plot(mean(highNic, 1), 'Color', [1, 0.6, 0.6]);
-    hold off;
-    
-    legend('Saline Control', 'Low Nic', 'High Nic');
-    xlabel('Time');
-    ylabel('Mean Firing Rate');
-    title('Overlay of All Groups');
+hold on;
+plot(mean(salineControl, 1), 'Color', 'k');
+plot(mean(lowNic, 1), 'Color', [0.6, 1, 0.6]);
+plot(mean(highNic, 1), 'Color', [1, 0.6, 0.6]);
+hold off;
+
+legend('Saline Control', 'Low Nic', 'High Nic');
+xlabel('Time');
+ylabel('Mean Firing Rate');
+title('Overlay of All Groups');
 end
 
 % Function to plot mean and SEM
 function plotMeanAndSEM(data, color)
-    meanData = mean(data, 1);
-    SEM = std(data, 0, 1) / sqrt(size(data, 1));
-    timeVector = 0:10:1190; % Assuming your data has 120 bins
-    fill([timeVector, fliplr(timeVector)], [meanData - SEM, fliplr(meanData + SEM)], color, 'FaceAlpha', 0.3, 'EdgeColor', 'none');
-    plot(timeVector, meanData, 'Color', color, 'LineWidth', 2);
+meanData = mean(data, 1);
+SEM = std(data, 0, 1) / sqrt(size(data, 1));
+% Adjust the timeVector to match the new data dimensions
+timeVector = linspace(0, length(meanData)-1, length(meanData));
+
+% Ensure the vectors for the fill function have matching dimensions
+upperSEM = meanData + SEM;
+lowerSEM = meanData - SEM;
+
+fill([timeVector, fliplr(timeVector)], [lowerSEM, fliplr(upperSEM)], color, 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+
+plot(timeVector, meanData, 'Color', color, 'LineWidth', 2); % Plot the mean on top
+
 end
 
 
@@ -228,15 +274,15 @@ end
 
 % Helper function to calculate the duration of firing increase and decrease
 function [duration_increase, duration_decrease] = calcDuration(data, baselineTime)
-    nUnits = size(data, 1);
-    duration_increase = zeros(nUnits, 1);
-    duration_decrease = zeros(nUnits, 1);
+nUnits = size(data, 1);
+duration_increase = zeros(nUnits, 1);
+duration_decrease = zeros(nUnits, 1);
 
-    for i = 1:nUnits
-        baseline = mean(data(i, 1:baselineTime));
-        post_data = data(i, baselineTime+1:end);
-        Threshold = 0.2;
-        duration_increase(i) = sum(post_data > baseline + Threshold);
-        duration_decrease(i) = sum(post_data < baseline - Threshold );
-    end
+for i = 1:nUnits
+    baseline = mean(data(i, 1:baselineTime));
+    post_data = data(i, baselineTime+1:end);
+    Threshold = 0.2;
+    duration_increase(i) = sum(post_data > baseline + Threshold);
+    duration_decrease(i) = sum(post_data < baseline - Threshold );
+end
 end
